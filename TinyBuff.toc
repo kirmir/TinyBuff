@@ -1,0 +1,7 @@
+## Interface: 50400
+## Title: TinyBuff
+## Author: kirmir
+## Notes: Tracks player buffs, target buffs and debuffs
+## SavedVariablesPerCharacter: TinyBuff_Config
+
+TinyBuff.lua
