@@ -49,19 +49,17 @@ local function NewIcon(point, size)
 	function icon:Enable(spell, icon, duration, expiration)
 		self.Image:SetTexture(icon)
 		self.Spell = spell
-
-		if duration then
-			self.Cooldown:Show()
-			self:SetCooldown(duration, expiration)
-		else
-			self.Cooldown:Hide()
-		end
-
+		self:SetCooldown(duration, expiration)
 		self:Show()
 	end
 
 	function icon:SetCooldown(duration, expiration)
-		CooldownFrame_SetTimer(self.Cooldown, expiration - duration, duration, 1)
+		if duration then
+			self.Cooldown:Show()
+			CooldownFrame_SetTimer(self.Cooldown, expiration - duration, duration, 1)
+		else
+			self.Cooldown:Hide()
+		end
 	end
 
 	function icon:Disable()
@@ -76,52 +74,81 @@ local function CreateIcons()
 	if #TinyBuff_Config.PlayerBuffs > 0 then
 		for i = 1, TinyBuff_Config.PlayerBuffsCount do
 			local x = -9 - ((i - 1) % 2) * (ICON_SIZE + 4)
-			local y = -10 + math.floor((i - 1) / 2) * (ICON_SIZE + 4)
+			local y = math.floor((i - 1) / 2) * (ICON_SIZE + 4)
 			PlayerBuffs[i] = NewIcon({ "BOTTOMRIGHT", "PlayerFrame", "TOPRIGHT", x, y }, ICON_SIZE)
 		end
 	end
-	if #TinyBuff_Config.TargetDebuffs > 0 then
+	--if #TinyBuff_Config.TargetDebuffs > 0 then
 		for i = 1, TinyBuff_Config.TargetDebuffsCount do
 			local x = ((i % 2 == 1) and 1 or -1) * (17 - math.ceil((math.floor((i - 1) % 6) + 1) / 2) * (ICON_SIZE + 4))
 			local y = -202 + math.floor((i - 1) / 6) * (ICON_SIZE + 4)
 			TargetDebuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
 		end
+	--end
+end
+
+local function ShowSpell(event, spell, unit, icons, config)
+	if unit == "player" and not Contains(config, spell) then --!!!!!!!!!!!!!!!!!!!!
+		return
+	end
+
+	if string.find(event, "REFRESH") or string.find(event, "DOSE") then
+		local icon = FindBySpell(icons, spell)
+		if icon then
+			local _, _, _, _, _, duration, expiration = UnitAura(unit, spell)
+			icon:SetCooldown(duration, expiration)
+		end
+	elseif string.find(event, "APPLIED") then
+		local icon = FindBySpell(icons, nil)
+		if icon then
+			local _, _, img, _, _, duration, expiration = UnitAura(unit, spell)
+			icon:Enable(spell, img, duration, expiration)
+		end
+	else
+		local icon = FindBySpell(icons, spell)
+		if icon then
+			icon:Disable()
+		end
 	end
 end
 
-local function ShowSpell(combatEvent, _, spell)
-	if Contains(TinyBuff_Config.PlayerBuffs, spell) == nil then
-		return
-	end
-	if string.find(combatEvent, "REFRESH") or string.find(combatEvent, "DOSE") then
-		local buff = FindBySpell(PlayerBuffs, spell)
-		if buff then
-			local _, _, _, _, _, duration, expiration = UnitAura("player", spell)
-			buff:SetCooldown(duration, expiration)
-		end
-	elseif string.find(combatEvent, "APPLIED") then
-		local buff = FindBySpell(PlayerBuffs, nil)
-		if buff then
-			local _, _, icon, _, _, duration, expiration = UnitAura("player", spell)
-			buff:Enable(spell, icon, duration, expiration)
-		end
-	else
-		local buff = FindBySpell(PlayerBuffs, spell)
-		if buff then
-			buff:Disable()
-		end
+local function Reset(icons)
+	for _, v in pairs(icons) do
+	  	v:Disable()
 	end
 end
 
 local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _, _, destName, _, _, ...)
 	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
-		if destName == PlayerName and bit.band(sourceFlags, 0x3) and string.find(combatEvent, "AURA") then
-			ShowSpell(combatEvent, ...)
+		if not string.find(combatEvent, "AURA") then
+			return
+		end
+
+		local _, spell, _, spellType = ...
+		if destName == PlayerName and spellType == "BUFF" then
+			ShowSpell(combatEvent, spell, "player", PlayerBuffs, TinyBuff_Config.PlayerBuffs)
+		else
+			local unit
+			if destName == UnitName("target") then
+				unit = "target"
+			elseif destName == UnitName("focus") then
+				unit = "focus"
+			end
+
+			if unit then
+				if spellType == "BUFF" then
+					--ShowSpell(combatEvent, spell, "player", PlayerBuffs, TinyBuff_Config.PlayerBuffs)
+				elseif spellType == "DEBUFF" then
+					ShowSpell(combatEvent, spell, unit, TargetDebuffs, TinyBuff_Config.TargetDebuffs)
+				end
+			end
 		end
 	elseif event == "PLAYER_TARGET_CHANGED" then
 
+	elseif event == "PLAYER_DEAD" then
+		Reset(PlayerBuffs)
 	elseif event == "PLAYER_ENTERING_WORLD" then
-		
+
 	else
 		CreateIcons()
 	end
@@ -131,4 +158,5 @@ Addon:SetScript("OnEvent", OnEvent)
 Addon:RegisterEvent("ADDON_LOADED")
 Addon:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Addon:RegisterEvent("PLAYER_TARGET_CHANGED")
+Addon:RegisterEvent("PLAYER_DEAD")
 Addon:RegisterEvent("PLAYER_ENTERING_WORLD")
