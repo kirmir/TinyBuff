@@ -87,7 +87,7 @@ local function CreateIcons()
 	--end
 end
 
-local function ShowSpell(event, spell, unit, icons, config)
+local function ShowSpell(event, spell, unit, icons, config, auraFunc)
 	if unit == "player" and not Contains(config, spell) then --!!!!!!!!!!!!!!!!!!!!
 		return
 	end
@@ -95,13 +95,13 @@ local function ShowSpell(event, spell, unit, icons, config)
 	if string.find(event, "REFRESH") or string.find(event, "DOSE") then
 		local icon = FindBySpell(icons, spell)
 		if icon then
-			local _, _, _, _, _, duration, expiration = UnitAura(unit, spell)
+			local _, _, _, _, _, duration, expiration = auraFunc(unit, spell)
 			icon:SetCooldown(duration, expiration)
 		end
 	elseif string.find(event, "APPLIED") then
 		local icon = FindBySpell(icons, nil)
 		if icon then
-			local _, _, img, _, _, duration, expiration = UnitAura(unit, spell)
+			local _, _, img, _, _, duration, expiration = auraFunc(unit, spell)
 			icon:Enable(spell, img, duration, expiration)
 		end
 	else
@@ -126,7 +126,7 @@ local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _,
 
 		local _, spell, _, spellType = ...
 		if destName == PlayerName and spellType == "BUFF" then
-			ShowSpell(combatEvent, spell, "player", PlayerBuffs, TinyBuff_Config.PlayerBuffs)
+			ShowSpell(combatEvent, spell, "player", PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
 		else
 			local unit
 			if destName == UnitName("target") then
@@ -139,7 +139,7 @@ local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _,
 				if spellType == "BUFF" then
 					--ShowSpell(combatEvent, spell, "player", PlayerBuffs, TinyBuff_Config.PlayerBuffs)
 				elseif spellType == "DEBUFF" then
-					ShowSpell(combatEvent, spell, unit, TargetDebuffs, TinyBuff_Config.TargetDebuffs)
+					ShowSpell(combatEvent, spell, unit, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
 				end
 			end
 		end
