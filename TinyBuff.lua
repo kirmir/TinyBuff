@@ -1,9 +1,12 @@
-TinyBuff_Config = TinyBuff_Config or { PlayerBuffsCount = 10, PlayerBuffs = {}, TargetBuffs = {}, TargetDebuffs = {} }
+TinyBuff_Config = TinyBuff_Config or { PlayerBuffsCount = 10, TargetBuffsCount = 12, TargetDebuffsCount = 12, PlayerBuffs = {}, TargetBuffs = {}, TargetDebuffs = {} }
 local ICON_SIZE = 30
 
 local Addon = CreateFrame("Frame")
 local PlayerName = UnitName("player")
+
 local PlayerBuffs = {}
+local TargetBuffs = {}
+local TargetDebuffs = {}
 
 local function Find(array, filterFunc)
 	for _, v in pairs(array) do
@@ -27,16 +30,17 @@ local function NewIcon(point, size)
 
 	icon:SetSize(size, size)
 	icon:SetPoint(unpack(point))
-	icon:SetAlpha(0.7)
-
-	icon.Overlay = icon:CreateTexture("Overlay", "BACKGROUND")
-	icon.Overlay:SetTexture(0, 0, 0)
-	icon.Overlay:SetPoint("TOPLEFT", -1, 1)
-	icon.Overlay:SetPoint("BOTTOMRIGHT", 1, -1)
+	
+	-- icon.Overlay = icon:CreateTexture("Overlay", "BACKGROUND")
+	-- icon.Overlay:SetTexture(0, 0, 0)
+	-- icon.Overlay:SetPoint("TOPLEFT", -1, 1)
+	-- icon.Overlay:SetPoint("BOTTOMRIGHT", 1, -1)
+	-- icon.Overlay:SetAlpha(1)
 
 	icon.Image = icon:CreateTexture("Image", "OVERLAY")
 	icon.Image:SetAllPoints()
 	icon.Image:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+	icon.Image:SetAlpha(0.7)
 
 	icon.Cooldown = CreateFrame("Cooldown", "Cooldown", icon, "CooldownFrameTemplate")
 	icon.Cooldown:SetAllPoints(icon.Image)
@@ -68,11 +72,20 @@ local function NewIcon(point, size)
 	return icon
 end
 
-local function CreatePlayerBuffs()
-	for i = 1, TinyBuff_Config.PlayerBuffsCount do
-		local x = -9 - ((i - 1) % 2) * (ICON_SIZE + 3)
-		local y = -10 + math.floor((i - 1) / 2) * (ICON_SIZE + 3)
-		PlayerBuffs[i] = NewIcon({ "BOTTOMRIGHT", "PlayerFrame", "TOPRIGHT", x, y }, ICON_SIZE)
+local function CreateIcons()
+	if #TinyBuff_Config.PlayerBuffs > 0 then
+		for i = 1, TinyBuff_Config.PlayerBuffsCount do
+			local x = -9 - ((i - 1) % 2) * (ICON_SIZE + 4)
+			local y = -10 + math.floor((i - 1) / 2) * (ICON_SIZE + 4)
+			PlayerBuffs[i] = NewIcon({ "BOTTOMRIGHT", "PlayerFrame", "TOPRIGHT", x, y }, ICON_SIZE)
+		end
+	end
+	if #TinyBuff_Config.TargetBuffs > 0 then
+		for i = 1, TinyBuff_Config.TargetBuffsCount do
+			local x = ((i % 2 == 1) and 1 or -1) * (17 - math.ceil((math.floor((i - 1) % 6) + 1) / 2) * (ICON_SIZE + 4))
+			local y = -202 + math.floor((i - 1) / 6) * (ICON_SIZE + 4)
+			TargetBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
+		end
 	end
 end
 
@@ -100,17 +113,18 @@ local function HandlePlayerBuff(combatEvent, _, spell)
 	end
 end
 
-local function OnEvent(self, event, _, combatEvent, _, _, _, sourceFlags, _, _, destName, _, _, ...)
+local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _, _, destName, _, _, ...)
 	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
 		if destName == PlayerName and bit.band(sourceFlags, 0x3) and string.find(combatEvent, "AURA") then
 			HandlePlayerBuff(combatEvent, ...)
 		end
+	else
+		CreateIcons()
 	end
 end
 
-CreatePlayerBuffs()
-
 Addon:SetScript("OnEvent", OnEvent)
+Addon:RegisterEvent("ADDON_LOADED")
 Addon:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Addon:RegisterEvent("PLAYER_TARGET_CHANGED")
 Addon:RegisterEvent("PLAYER_ENTERING_WORLD")
