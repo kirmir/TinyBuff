@@ -80,16 +80,16 @@ local function CreateIcons()
 			PlayerBuffs[i] = NewIcon({ "BOTTOMRIGHT", "PlayerFrame", "TOPRIGHT", x, y }, ICON_SIZE)
 		end
 	end
-	if #TinyBuff_Config.TargetBuffs > 0 then
-		for i = 1, TinyBuff_Config.TargetBuffsCount do
+	if #TinyBuff_Config.TargetDebuffs > 0 then
+		for i = 1, TinyBuff_Config.TargetDebuffsCount do
 			local x = ((i % 2 == 1) and 1 or -1) * (17 - math.ceil((math.floor((i - 1) % 6) + 1) / 2) * (ICON_SIZE + 4))
 			local y = -202 + math.floor((i - 1) / 6) * (ICON_SIZE + 4)
-			TargetBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
+			TargetDebuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
 		end
 	end
 end
 
-local function HandlePlayerBuff(combatEvent, _, spell)
+local function ShowSpell(combatEvent, _, spell)
 	if Contains(TinyBuff_Config.PlayerBuffs, spell) == nil then
 		return
 	end
@@ -116,8 +116,12 @@ end
 local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _, _, destName, _, _, ...)
 	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
 		if destName == PlayerName and bit.band(sourceFlags, 0x3) and string.find(combatEvent, "AURA") then
-			HandlePlayerBuff(combatEvent, ...)
+			ShowSpell(combatEvent, ...)
 		end
+	elseif event == "PLAYER_TARGET_CHANGED" then
+
+	elseif event == "PLAYER_ENTERING_WORLD" then
+		
 	else
 		CreateIcons()
 	end
