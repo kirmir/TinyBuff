@@ -2,8 +2,7 @@ TinyBuff_Config = TinyBuff_Config or { PlayerBuffsCount = 10, TargetBuffsCount =
 local ICON_SIZE = 30
 
 local Addon = CreateFrame("Frame")
-local PlayerGUID = UnitGUID("player")
-
+local PlayerGUID
 local PlayerBuffs = {}
 local TargetBuffs = {}
 local TargetDebuffs = {}
@@ -126,16 +125,15 @@ local function Reset(icons)
 	end
 end
 
-local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _, destGUID, _, _, _, _, spell, _, spellType)
+local function OnEvent(self, event, addon, combatEvent, _, _, _, _, _, destGUID, _, destFlags, _, _, spell, _, spellType)
 	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
 		if not string.find(combatEvent, "AURA") then
 			return
 		end
-
+		
 		if destGUID == PlayerGUID and spellType == "BUFF" then
 			ShowSpell(combatEvent, spell, "player", PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
-		else
-			-- TODO: Check that target is not friendly
+		elseif bit.band(destFlags, 0x6) then
 			local unit
 			if destGUID == UnitGUID("target") then
 				unit = "target"
@@ -158,6 +156,7 @@ local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _,
 		Reset(TargetBuffs)
 		Reset(TargetDebuffs)
 	else
+		PlayerGUID = UnitGUID("player")
 		CreateIcons()
 	end
 end
