@@ -136,6 +136,7 @@ local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _,
 		if destGUID == PlayerGUID and spellType == "BUFF" then
 			ShowSpell(combatEvent, spell, "player", PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
 		else
+			-- TODO: Check that target is not friendly
 			local unit
 			if destGUID == UnitGUID("target") then
 				unit = "target"
@@ -151,12 +152,12 @@ local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _,
 				end
 			end
 		end
-	elseif event == "PLAYER_TARGET_CHANGED" then
-
 	elseif event == "PLAYER_DEAD" then
 		Reset(PlayerBuffs)
 	elseif event == "PLAYER_ENTERING_WORLD" then
-
+		Reset(PlayerBuffs)
+		Reset(TargetBuffs)
+		Reset(TargetDebuffs)
 	else
 		CreateIcons()
 	end
@@ -165,6 +166,5 @@ end
 Addon:SetScript("OnEvent", OnEvent)
 Addon:RegisterEvent("ADDON_LOADED")
 Addon:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-Addon:RegisterEvent("PLAYER_TARGET_CHANGED")
 Addon:RegisterEvent("PLAYER_DEAD")
 Addon:RegisterEvent("PLAYER_ENTERING_WORLD")
