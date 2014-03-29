@@ -145,7 +145,7 @@ local function OnEvent(self, event, addon, combatEvent, _, _, _, _, _, destGuid,
 		
 		if destGuid == PlayerGuid and spellType == "BUFF" then
 			ShowSpell(combatEvent, spell, "player", destGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
-		elseif bit.band(destFlags, 0x6) then
+		elseif bit.band(destFlags, 0x60) then
 			local unit = GetUnitType(destGuid)
 			if unit or string.match(combatEvent, "REMOVED$") then
 				if spellType == "BUFF" then
