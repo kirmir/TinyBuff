@@ -2,7 +2,7 @@ TinyBuff_Config = TinyBuff_Config or { PlayerBuffsCount = 10, TargetBuffsCount =
 local ICON_SIZE = 30
 
 local Addon = CreateFrame("Frame")
-local PlayerName = UnitName("player")
+local PlayerGUID = UnitGUID("player")
 
 local PlayerBuffs = {}
 local TargetBuffs = {}
@@ -50,11 +50,17 @@ local function NewIcon(point, size)
 		self.Image:SetTexture(icon)
 		self.Spell = spell
 		self:SetCooldown(duration, expiration)
+		self:SetScript("OnUpdate", function(self)
+				if self.Expiration and GetTime() > self.Expiration then
+					self:Disable()
+				end
+			end)
 		self:Show()
 	end
 
 	function icon:SetCooldown(duration, expiration)
 		if duration then
+			self.Expiration = expiration
 			self.Cooldown:Show()
 			CooldownFrame_SetTimer(self.Cooldown, expiration - duration, duration, 1)
 		else
@@ -64,6 +70,8 @@ local function NewIcon(point, size)
 
 	function icon:Disable()
 		self.Spell = nil
+		self.Expiration = nil
+		self:SetScript("OnUpdate", nil)
 		self:Hide()
 	end
 
@@ -78,17 +86,17 @@ local function CreateIcons()
 			PlayerBuffs[i] = NewIcon({ "BOTTOMRIGHT", "PlayerFrame", "TOPRIGHT", x, y }, ICON_SIZE)
 		end
 	end
-	--if #TinyBuff_Config.TargetDebuffs > 0 then
+	if #TinyBuff_Config.TargetDebuffs > 0 then
 		for i = 1, TinyBuff_Config.TargetDebuffsCount do
 			local x = ((i % 2 == 1) and 1 or -1) * (17 - math.ceil((math.floor((i - 1) % 6) + 1) / 2) * (ICON_SIZE + 4))
 			local y = -202 + math.floor((i - 1) / 6) * (ICON_SIZE + 4)
 			TargetDebuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
 		end
-	--end
+	end
 end
 
 local function ShowSpell(event, spell, unit, icons, config, auraFunc)
-	if unit == "player" and not Contains(config, spell) then --!!!!!!!!!!!!!!!!!!!!
+	if not Contains(config, spell) then
 		return
 	end
 
@@ -118,20 +126,20 @@ local function Reset(icons)
 	end
 end
 
-local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _, _, destName, _, _, ...)
+local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _, destGUID, _, _, _, ...)
 	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
 		if not string.find(combatEvent, "AURA") then
 			return
 		end
 
 		local _, spell, _, spellType = ...
-		if destName == PlayerName and spellType == "BUFF" then
+		if destGUID == PlayerGUID and spellType == "BUFF" then
 			ShowSpell(combatEvent, spell, "player", PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
 		else
 			local unit
-			if destName == UnitName("target") then
+			if destGUID == UnitGUID("target") then
 				unit = "target"
-			elseif destName == UnitName("focus") then
+			elseif destGUID == UnitGUID("focus") then
 				unit = "focus"
 			end
 
