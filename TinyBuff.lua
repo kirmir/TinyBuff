@@ -126,13 +126,12 @@ local function Reset(icons)
 	end
 end
 
-local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _, destGUID, _, _, _, ...)
+local function OnEvent(self, event, addon, combatEvent, _, _, _, sourceFlags, _, destGUID, _, _, _, _, spell, _, spellType)
 	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
 		if not string.find(combatEvent, "AURA") then
 			return
 		end
 
-		local _, spell, _, spellType = ...
 		if destGUID == PlayerGUID and spellType == "BUFF" then
 			ShowSpell(combatEvent, spell, "player", PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
 		else
