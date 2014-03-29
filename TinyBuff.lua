@@ -2,7 +2,7 @@ TinyBuff_Config = TinyBuff_Config or { PlayerBuffsCount = 10, TargetBuffsCount =
 local ICON_SIZE = 30
 
 local Addon = CreateFrame("Frame")
-local PlayerGUID
+local PlayerGuid
 local PlayerBuffs = {}
 local TargetBuffs = {}
 local TargetDebuffs = {}
@@ -19,8 +19,10 @@ local function Contains(array, value)
 	return Find(array, function(x) return x == value end)
 end
 
-local function FindBySpell(array, spell)
-	return Find(array, function(x) return x.Spell == spell end)
+local function FindByParams(array, spell, guid)
+	return Find(array, function(x)
+		return x.Spell == spell and x.Guid == guid
+	end)
 end
 
 local function NewIcon(point, size)
@@ -45,9 +47,10 @@ local function NewIcon(point, size)
 	icon.Cooldown:SetAllPoints(icon.Image)
 	icon.Cooldown:SetReverse()
 
-	function icon:Enable(spell, icon, duration, expiration)
+	function icon:Enable(spell, guid, icon, duration, expiration)
 		self.Image:SetTexture(icon)
 		self.Spell = spell
+		self.Guid = guid
 		self:SetCooldown(duration, expiration)
 		self:SetScript("OnUpdate", function(self)
 				if self.Expiration and GetTime() > self.Expiration then
@@ -69,6 +72,7 @@ local function NewIcon(point, size)
 
 	function icon:Disable()
 		self.Spell = nil
+		self.Guid = nil
 		self.Expiration = nil
 		self:SetScript("OnUpdate", nil)
 		self:Hide()
@@ -94,25 +98,24 @@ local function CreateIcons()
 	end
 end
 
-local function ShowSpell(event, spell, unit, icons, config, auraFunc)
+local function ShowSpell(event, spell, unit, guid, icons, config, auraFunc)
 	if not Contains(config, spell) then
 		return
 	end
-
 	if string.find(event, "REFRESH") or string.find(event, "DOSE") then
-		local icon = FindBySpell(icons, spell)
+		local icon = FindByParams(icons, spell, guid)
 		if icon then
 			local _, _, _, _, _, duration, expiration = auraFunc(unit, spell)
 			icon:SetCooldown(duration, expiration)
 		end
 	elseif string.find(event, "APPLIED") then
-		local icon = FindBySpell(icons, nil)
+		local icon = FindByParams(icons, nil, nil)
 		if icon then
 			local _, _, img, _, _, duration, expiration = auraFunc(unit, spell)
-			icon:Enable(spell, img, duration, expiration)
+			icon:Enable(spell, guid, img, duration, expiration)
 		end
 	else
-		local icon = FindBySpell(icons, spell)
+		local icon = FindByParams(icons, spell, guid)
 		if icon then
 			icon:Disable()
 		end
@@ -125,27 +128,30 @@ local function Reset(icons)
 	end
 end
 
-local function OnEvent(self, event, addon, combatEvent, _, _, _, _, _, destGUID, _, destFlags, _, _, spell, _, spellType)
+local function GetUnitType(guid)
+	if guid == UnitGUID("target") then
+		return "target"
+	end
+	if guid == UnitGUID("focus") then
+		return "focus"
+	end
+end
+
+local function OnEvent(self, event, addon, combatEvent, _, _, _, _, _, destGuid, _, destFlags, _, _, spell, _, spellType)
 	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
 		if not string.find(combatEvent, "AURA") then
 			return
 		end
 		
-		if destGUID == PlayerGUID and spellType == "BUFF" then
-			ShowSpell(combatEvent, spell, "player", PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
+		if destGuid == PlayerGuid and spellType == "BUFF" then
+			ShowSpell(combatEvent, spell, "player", destGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
 		elseif bit.band(destFlags, 0x6) then
-			local unit
-			if destGUID == UnitGUID("target") then
-				unit = "target"
-			elseif destGUID == UnitGUID("focus") then
-				unit = "focus"
-			end
-
-			if unit then
+			local unit = GetUnitType(destGuid)
+			if unit or string.match(combatEvent, "REMOVED$") then
 				if spellType == "BUFF" then
-					--ShowSpell(combatEvent, spell, "player", PlayerBuffs, TinyBuff_Config.PlayerBuffs)
-				elseif spellType == "DEBUFF" then
-					ShowSpell(combatEvent, spell, unit, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
+					--
+				else
+					ShowSpell(combatEvent, spell, unit, destGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
 				end
 			end
 		end
@@ -156,7 +162,10 @@ local function OnEvent(self, event, addon, combatEvent, _, _, _, _, _, destGUID,
 		Reset(TargetBuffs)
 		Reset(TargetDebuffs)
 	else
-		PlayerGUID = UnitGUID("player")
+		PlayerGuid = UnitGUID("player")
+		if PlayerGuid then
+			Addon:UnregisterEvent("ADDON_LOADED")
+		end
 		CreateIcons()
 	end
 end
