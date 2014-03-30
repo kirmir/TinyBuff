@@ -21,7 +21,7 @@ end
 
 local function FindByParams(array, spell, guid)
 	return Find(array, function(x)
-		return x.Spell == spell and x.Guid == guid
+		return x.Spell == spell and x.DestGuid == guid
 	end)
 end
 
@@ -47,10 +47,11 @@ local function NewIcon(point, size)
 	icon.Cooldown:SetAllPoints(icon.Image)
 	icon.Cooldown:SetReverse()
 
-	function icon:Enable(spell, guid, icon, duration, expiration)
+	function icon:Enable(spell, destGuid, sourceGuid, icon, duration, expiration)
 		self.Image:SetTexture(icon)
 		self.Spell = spell
-		self.Guid = guid
+		self.DestGuid = destGuid
+		self.SourceGuid = sourceGuid
 		
 		if duration then
 			self.Expiration = expiration
@@ -71,7 +72,8 @@ local function NewIcon(point, size)
 
 	function icon:Disable()
 		self.Spell = nil
-		self.Guid = nil
+		self.DestGuid = nil
+		self.SourceGuid = nil
 		self.Expiration = nil
 		self:SetScript("OnUpdate", nil)
 		self:Hide()
@@ -109,36 +111,36 @@ local function GetUnitType(guid)
 	end
 end
 
-local function EnableIcon(spell, guid, img, duration, expiration, icons)
-	local icon = FindByParams(icons, spell, guid) or FindByParams(icons, nil, nil)
+local function EnableIcon(spell, destGuid, sourceGuid, img, duration, expiration, icons)
+	local icon = FindByParams(icons, spell, destGuid) or FindByParams(icons, nil, nil)
 	if icon then
-		icon:Enable(spell, guid, img, duration, expiration)
+		icon:Enable(spell, destGuid, sourceGuid, img, duration, expiration)
 	end
 end
 
-local function ShowEventSpell(event, spell, guid, icons, config, auraFunc)
+local function OnAuraEvent(event, spell, destGuid, sourceGuid, icons, config, auraFunc)
 	if not Contains(config, spell) then
 		return
 	end
 	
 	if string.match(event, "REMOVED$") then
-		local icon = FindByParams(icons, spell, guid)
+		local icon = FindByParams(icons, spell, destGuid)
 		if icon then
 			icon:Disable()
 		end
 	else
-		local unit = GetUnitType(guid)
+		local unit = GetUnitType(destGuid)
 		if unit then
 			local _, _, img, _, _, duration, expiration = auraFunc(unit, spell)
-			EnableIcon(spell, guid, img, duration, expiration, icons)
+			EnableIcon(spell, destGuid, sourceGuid, img, duration, expiration, icons)
 		end
 	end
 end
 
-local function ShowSpell(i, guid, icons, config, auraFunc)
+local function ShowSpell(i, destGuid, sourceGuid, icons, config, auraFunc)
 	local spell, _, img, _, _, duration, expiration = auraFunc("target", i)
 	if Contains(config, spell) then
-		EnableIcon(spell, guid, img, duration, expiration, icons)
+		EnableIcon(spell, destGuid, sourceGuid, img, duration, expiration, icons)
 	end
 end
 
@@ -148,25 +150,25 @@ local function Reset(icons)
 	end
 end
 
-local function OnEvent(self, event, addon, combatEvent, _, _, _, _, _, destGuid, _, destFlags, _, _, spell, _, spellType)
+local function OnEvent(self, event, addon, combatEvent, _, sourceGuid, _, _, _, destGuid, _, destFlags, _, _, spell, _, spellType)
 	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
 		if not string.find(combatEvent, "AURA") then
 			return
 		end
 		
 		if destGuid == PlayerGuid and spellType == "BUFF" then
-			ShowEventSpell(combatEvent, spell, destGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
+			OnAuraEvent(combatEvent, spell, destGuid, sourceGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
 		elseif bit.band(destFlags, 0x60) ~= 0 then
 			if spellType == "BUFF" then
 				--
 			else
-				ShowEventSpell(combatEvent, spell, destGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
+				OnAuraEvent(combatEvent, spell, destGuid, sourceGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
 			end
 		end
 	elseif event == "PLAYER_TARGET_CHANGED" then
 		local guid = UnitGUID("target")
 		for i = 1, 40 do
-			ShowSpell(i, guid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
+			ShowSpell(i, guid, sourceGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
 			--
 		end
 	elseif event == "PLAYER_DEAD" then
