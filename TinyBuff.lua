@@ -51,16 +51,7 @@ local function NewIcon(point, size)
 		self.Image:SetTexture(icon)
 		self.Spell = spell
 		self.Guid = guid
-		self:SetCooldown(duration, expiration)
-		self:SetScript("OnUpdate", function(self)
-				if self.Expiration and GetTime() > self.Expiration then
-					self:Disable()
-				end
-			end)
-		self:Show()
-	end
 
-	function icon:SetCooldown(duration, expiration)
 		if duration then
 			self.Expiration = expiration
 			self.Cooldown:Show()
@@ -68,6 +59,14 @@ local function NewIcon(point, size)
 		else
 			self.Cooldown:Hide()
 		end
+
+		self:SetScript("OnUpdate", function(self)
+				if self.Expiration and GetTime() > self.Expiration then
+					self:Disable()
+				end
+			end)
+
+		self:Show()
 	end
 
 	function icon:Disable()
@@ -102,23 +101,16 @@ local function ShowSpell(event, spell, unit, guid, icons, config, auraFunc)
 	if not Contains(config, spell) then
 		return
 	end
-	if string.find(event, "REFRESH") or string.find(event, "DOSE") then
-		local icon = FindByParams(icons, spell, guid)
-		if icon then
-			local _, _, _, _, _, duration, expiration = auraFunc(unit, spell)
-			icon:SetCooldown(duration, expiration)
-		end
-	elseif string.find(event, "APPLIED") then
-		local icon = FindByParams(icons, nil, nil)
-		if icon then
-			local _, _, img, _, _, duration, expiration = auraFunc(unit, spell)
-			icon:Enable(spell, guid, img, duration, expiration)
-		end
-	else
+	print(spell.." | "..event.." | "..(unit and unit or "nil").." | "..guid)
+	if string.match(event, "REMOVED$") then
 		local icon = FindByParams(icons, spell, guid)
 		if icon then
 			icon:Disable()
 		end
+	else
+		local icon = FindByParams(icons, spell, guid) or FindByParams(icons, nil, nil)
+		local _, _, img, _, _, duration, expiration = auraFunc(unit, spell)
+		icon:Enable(spell, guid, img, duration, expiration)
 	end
 end
 
