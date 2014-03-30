@@ -106,11 +106,18 @@ local function GetUnitType(guid)
 	end
 end
 
-local function ShowSpell(event, spell, guid, icons, config, auraFunc)
+local function EnableIcon(spell, guid, img, duration, expiration, icons)
+	local icon = FindByParams(icons, spell, guid) or FindByParams(icons, nil, nil)
+	if icon then
+		icon:Enable(spell, guid, img, duration, expiration)
+	end
+end
+
+local function ShowEventSpell(event, spell, guid, icons, config, auraFunc)
 	if not Contains(config, spell) then
 		return
 	end
-	print(spell.." | "..event.." | "..(unit and unit or "nil").." | "..guid)
+	
 	if string.match(event, "REMOVED$") then
 		local icon = FindByParams(icons, spell, guid)
 		if icon then
@@ -119,10 +126,16 @@ local function ShowSpell(event, spell, guid, icons, config, auraFunc)
 	else
 		local unit = GetUnitType(guid)
 		if unit then
-			local icon = FindByParams(icons, spell, guid) or FindByParams(icons, nil, nil)
 			local _, _, img, _, _, duration, expiration = auraFunc(unit, spell)
-			icon:Enable(spell, guid, img, duration, expiration)
+			EnableIcon(spell, guid, img, duration, expiration, icons)
 		end
+	end
+end
+
+local function ShowSpell(i, guid, icons, config, auraFunc)
+	local spell, _, img, _, _, duration, expiration = auraFunc("target", i)
+	if Contains(config, spell) then
+		EnableIcon(spell, guid, img, duration, expiration, icons)
 	end
 end
 
@@ -139,16 +152,20 @@ local function OnEvent(self, event, addon, combatEvent, _, _, _, _, _, destGuid,
 		end
 		
 		if destGuid == PlayerGuid and spellType == "BUFF" then
-			ShowSpell(combatEvent, spell, destGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
+			ShowEventSpell(combatEvent, spell, destGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
 		elseif bit.band(destFlags, 0x60) ~= 0 then
 			if spellType == "BUFF" then
 				--
 			else
-				ShowSpell(combatEvent, spell, destGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
+				ShowEventSpell(combatEvent, spell, destGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
 			end
 		end
 	elseif event == "PLAYER_TARGET_CHANGED" then
-		
+		local guid = UnitGUID("target")
+		for i = 1, 40 do
+			ShowSpell(i, guid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
+			--
+		end
 	elseif event == "PLAYER_DEAD" then
 		Reset(PlayerBuffs)
 	elseif event == "PLAYER_ENTERING_WORLD" then
