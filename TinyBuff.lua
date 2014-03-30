@@ -51,7 +51,7 @@ local function NewIcon(point, size)
 		self.Image:SetTexture(icon)
 		self.Spell = spell
 		self.Guid = guid
-
+		
 		if duration then
 			self.Expiration = expiration
 			self.Cooldown:Show()
@@ -97,7 +97,16 @@ local function CreateIcons()
 	end
 end
 
-local function ShowSpell(event, spell, unit, guid, icons, config, auraFunc)
+local function GetUnitType(guid)
+	if guid == UnitGUID("target") then
+		return "target"
+	end
+	if guid == UnitGUID("focus") then
+		return "focus"
+	end
+end
+
+local function ShowSpell(event, spell, guid, icons, config, auraFunc)
 	if not Contains(config, spell) then
 		return
 	end
@@ -108,24 +117,18 @@ local function ShowSpell(event, spell, unit, guid, icons, config, auraFunc)
 			icon:Disable()
 		end
 	else
-		local icon = FindByParams(icons, spell, guid) or FindByParams(icons, nil, nil)
-		local _, _, img, _, _, duration, expiration = auraFunc(unit, spell)
-		icon:Enable(spell, guid, img, duration, expiration)
+		local unit = GetUnitType(guid)
+		if unit then
+			local icon = FindByParams(icons, spell, guid) or FindByParams(icons, nil, nil)
+			local _, _, img, _, _, duration, expiration = auraFunc(unit, spell)
+			icon:Enable(spell, guid, img, duration, expiration)
+		end
 	end
 end
 
 local function Reset(icons)
 	for _, v in pairs(icons) do
 	  	v:Disable()
-	end
-end
-
-local function GetUnitType(guid)
-	if guid == UnitGUID("target") then
-		return "target"
-	end
-	if guid == UnitGUID("focus") then
-		return "focus"
 	end
 end
 
@@ -136,17 +139,16 @@ local function OnEvent(self, event, addon, combatEvent, _, _, _, _, _, destGuid,
 		end
 		
 		if destGuid == PlayerGuid and spellType == "BUFF" then
-			ShowSpell(combatEvent, spell, "player", destGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
+			ShowSpell(combatEvent, spell, destGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
 		elseif bit.band(destFlags, 0x60) ~= 0 then
-			local unit = GetUnitType(destGuid)
-			if unit or string.match(combatEvent, "REMOVED$") then
-				if spellType == "BUFF" then
-					--
-				else
-					ShowSpell(combatEvent, spell, unit, destGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
-				end
+			if spellType == "BUFF" then
+				--
+			else
+				ShowSpell(combatEvent, spell, destGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
 			end
 		end
+	elseif event == "PLAYER_TARGET_CHANGED" then
+		
 	elseif event == "PLAYER_DEAD" then
 		Reset(PlayerBuffs)
 	elseif event == "PLAYER_ENTERING_WORLD" then
@@ -166,4 +168,5 @@ Addon:SetScript("OnEvent", OnEvent)
 Addon:RegisterEvent("ADDON_LOADED")
 Addon:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Addon:RegisterEvent("PLAYER_DEAD")
+Addon:RegisterEvent("PLAYER_TARGET_CHANGED")
 Addon:RegisterEvent("PLAYER_ENTERING_WORLD")
