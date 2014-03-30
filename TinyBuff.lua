@@ -1,4 +1,4 @@
-TinyBuff_Config = TinyBuff_Config or { PlayerBuffsCount = 10, TargetBuffsCount = 12, TargetDebuffsCount = 12, PlayerBuffs = {}, TargetBuffs = {}, TargetDebuffs = {} }
+TinyBuff_Config = TinyBuff_Config or { PlayerBuffsCount = 8, TargetBuffsCount = 8, TargetDebuffsCount = 12, PlayerBuffs = {}, TargetBuffs = {}, TargetDebuffs = {} }
 local ICON_SIZE = 30
 
 local Addon = CreateFrame("Frame")
@@ -31,12 +31,6 @@ local function NewIcon(point, size)
 
 	icon:SetSize(size, size)
 	icon:SetPoint(unpack(point))
-	
-	-- icon.Overlay = icon:CreateTexture("Overlay", "BACKGROUND")
-	-- icon.Overlay:SetTexture(0, 0, 0)
-	-- icon.Overlay:SetPoint("TOPLEFT", -1, 1)
-	-- icon.Overlay:SetPoint("BOTTOMRIGHT", 1, -1)
-	-- icon.Overlay:SetAlpha(1)
 
 	icon.Image = icon:CreateTexture("Image", "OVERLAY")
 	icon.Image:SetAllPoints()
@@ -85,9 +79,17 @@ end
 local function CreateIcons()
 	if #TinyBuff_Config.PlayerBuffs > 0 then
 		for i = 1, TinyBuff_Config.PlayerBuffsCount do
-			local x = -9 - ((i - 1) % 2) * (ICON_SIZE + 4)
-			local y = math.floor((i - 1) / 2) * (ICON_SIZE + 4)
-			PlayerBuffs[i] = NewIcon({ "BOTTOMRIGHT", "PlayerFrame", "TOPRIGHT", x, y }, ICON_SIZE)
+			local x = -140 - ((i - 1) % 2) * (ICON_SIZE + 4)
+			local y = -155 + math.floor((i - 1) / 2) * (ICON_SIZE + 4)
+			PlayerBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
+		end
+	end
+	TinyBuff_Config.TargetBuffsCount = 8
+	if #TinyBuff_Config.TargetBuffs > 0 then
+		for i = 1, TinyBuff_Config.TargetBuffsCount do
+			local x = 139 + math.floor((i - 1) / 2) * (ICON_SIZE + 4)
+			local y = -50 + ((i - 1) % 2) * (ICON_SIZE + 4)
+			TargetBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
 		end
 	end
 	if #TinyBuff_Config.TargetDebuffs > 0 then
@@ -160,7 +162,7 @@ local function OnEvent(self, event, addon, combatEvent, _, sourceGuid, _, _, _, 
 			OnAuraEvent(combatEvent, spell, destGuid, sourceGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
 		elseif bit.band(destFlags, 0x60) ~= 0 then
 			if spellType == "BUFF" then
-				--
+				OnAuraEvent(combatEvent, spell, destGuid, sourceGuid, TargetBuffs, TinyBuff_Config.TargetBuffs, UnitBuff)
 			else
 				OnAuraEvent(combatEvent, spell, destGuid, sourceGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
 			end
@@ -169,7 +171,7 @@ local function OnEvent(self, event, addon, combatEvent, _, sourceGuid, _, _, _, 
 		local guid = UnitGUID("target")
 		for i = 1, 40 do
 			ShowSpell(i, guid, sourceGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
-			--
+			ShowSpell(i, guid, sourceGuid, TargetBuffs, TinyBuff_Config.TargetBuffs, UnitBuff)
 		end
 	elseif event == "PLAYER_DEAD" then
 		Reset(PlayerBuffs)
