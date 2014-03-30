@@ -98,6 +98,9 @@ local function CreateIcons()
 end
 
 local function GetUnitType(guid)
+	if guid == UnitGUID("player") then
+		return "player"
+	end
 	if guid == UnitGUID("target") then
 		return "target"
 	end
