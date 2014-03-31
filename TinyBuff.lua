@@ -146,14 +146,22 @@ local function ShowSpell(i, destGuid, sourceGuid, icons, config, auraFunc)
 	end
 end
 
-local function Reset(icons)
+local function Reset(icons, guid)
 	for _, v in pairs(icons) do
-	  	v:Disable()
+	  	if not guid or v.DestGuid == guid then
+	  		v:Disable()
+	  	end
 	end
 end
 
 local function OnEvent(self, event, addon, combatEvent, _, sourceGuid, _, _, _, destGuid, _, destFlags, _, _, spell, _, spellType)
 	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+		if combatEvent == "UNIT_DIED" then
+			Reset(TargetBuffs, destGuid)
+			Reset(TargetDebuffs, destGuid)
+			return
+		end
+
 		if not string.find(combatEvent, "AURA") then
 			return
 		end
