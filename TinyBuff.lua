@@ -46,20 +46,20 @@ local function NewIcon(point, size)
 		self.Spell = spell
 		self.DestGuid = destGuid
 		self.SourceGuid = sourceGuid
-		
-		if duration then
+
+		if duration > 0 then
 			self.Expiration = expiration
 			self.Cooldown:Show()
 			CooldownFrame_SetTimer(self.Cooldown, expiration - duration, duration, 1)
-		else
-			self.Cooldown:Hide()
-		end
 
-		self:SetScript("OnUpdate", function(self)
-				if self.Expiration and GetTime() > self.Expiration then
+			self:SetScript("OnUpdate", function(self)
+				if GetTime() > self.Expiration then
 					self:Disable()
 				end
 			end)
+		else
+			self.Cooldown:Hide()
+		end
 
 		self:Show()
 	end
@@ -87,8 +87,8 @@ local function CreateIcons()
 	TinyBuff_Config.TargetBuffsCount = 8
 	if #TinyBuff_Config.TargetBuffs > 0 then
 		for i = 1, TinyBuff_Config.TargetBuffsCount do
-			local x = 139 + math.floor((i - 1) / 2) * (ICON_SIZE + 4)
-			local y = -50 + ((i - 1) % 2) * (ICON_SIZE + 4)
+			local x = ((i % 2 == 1) and 1 or -1) * (17 - math.ceil((math.floor((i - 1) % 6) + 1) / 2) * (ICON_SIZE + 4))
+			local y = 90 + math.floor((i - 1) / 6) * (ICON_SIZE + 4)
 			TargetBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
 		end
 	end
