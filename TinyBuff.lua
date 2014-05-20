@@ -42,6 +42,10 @@ local function NewIcon(point, size)
 	icon.Cooldown:SetReverse()
 
 	function icon:Enable(spell, destGuid, sourceGuid, icon, duration, expiration)
+		if self.Spell and duration == 0 then
+			return
+		end
+
 		self.Image:SetTexture(icon)
 		self.Spell = spell
 		self.DestGuid = destGuid
