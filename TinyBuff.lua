@@ -82,22 +82,21 @@ local function CreateIcons()
 	if #TinyBuff_Config.PlayerBuffs > 0 then
 		for i = 1, TinyBuff_Config.PlayerBuffsCount do
 			local x = -140 - ((i - 1) % 2) * (ICON_SIZE + 4)
-			local y = -155 + math.floor((i - 1) / 2) * (ICON_SIZE + 4)
+			local y = -146 + math.floor((i - 1) / 2) * (ICON_SIZE + 4)
 			PlayerBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
 		end
 	end
-	TinyBuff_Config.TargetBuffsCount = 8
 	if #TinyBuff_Config.TargetBuffs > 0 then
 		for i = 1, TinyBuff_Config.TargetBuffsCount do
 			local x = ((i % 2 == 1) and 1 or -1) * (17 - math.ceil((math.floor((i - 1) % 6) + 1) / 2) * (ICON_SIZE + 4))
-			local y = 90 + math.floor((i - 1) / 6) * (ICON_SIZE + 4)
+			local y = 109 + math.floor((i - 1) / 6) * (ICON_SIZE + 4)
 			TargetBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
 		end
 	end
 	if #TinyBuff_Config.TargetDebuffs > 0 then
 		for i = 1, TinyBuff_Config.TargetDebuffsCount do
 			local x = ((i % 2 == 1) and 1 or -1) * (17 - math.ceil((math.floor((i - 1) % 6) + 1) / 2) * (ICON_SIZE + 4))
-			local y = -202 + math.floor((i - 1) / 6) * (ICON_SIZE + 4)
+			local y = -183 + math.floor((i - 1) / 6) * (ICON_SIZE + 4)
 			TargetDebuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
 		end
 	end
