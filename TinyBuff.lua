@@ -82,7 +82,7 @@ local function CreateIcons()
 	if #TinyBuff_Config.PlayerBuffs > 0 then
 		for i = 1, TinyBuff_Config.PlayerBuffsCount do
 			local x = -140 - ((i - 1) % 2) * (ICON_SIZE + 4)
-			local y = -146 + math.floor((i - 1) / 2) * (ICON_SIZE + 4)
+			local y = -138 + math.floor((i - 1) / 2) * (ICON_SIZE + 4)
 			PlayerBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
 		end
 	end
