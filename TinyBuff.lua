@@ -181,7 +181,7 @@ local function OnEvent(self, event, addon, combatEvent, _, sourceGuid, _, _, _, 
 				OnAuraEvent(combatEvent, spellId, spellName, destGuid, sourceGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
 			end
 		end
-	elseif event == "PLAYER_TARGET_CHANGED" then
+	elseif event == "PLAYER_TARGET_CHANGED" and UnitIsEnemy("player", "target") then
 		local guid = UnitGUID("target")
 		for i = 1, 40 do
 			ShowSpell(i, guid, sourceGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
