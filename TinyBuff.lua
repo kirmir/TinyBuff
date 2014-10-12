@@ -126,7 +126,7 @@ local function OnAuraEvent(event, spellId, spellName, destGuid, sourceGuid, icon
 		return
 	end
 
-	if string.match(event, "REMOVED$") then
+	if string.match(event, "REMOVED$") or string.match(event, "BROKEN$") or string.match(event, "BROKEN_SPELL$") then
 		local icon = FindByParams(icons, spellId, destGuid)
 		if icon and icon.SourceGuid == sourceGuid then
 			icon:Disable()
