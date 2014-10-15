@@ -1,4 +1,4 @@
-TinyBuff_Config = TinyBuff_Config or { PlayerBuffsCount = 8, TargetBuffsCount = 8, TargetDebuffsCount = 12, PlayerBuffs = {}, TargetBuffs = {}, TargetDebuffs = {} }
+TinyBuff_Config = TinyBuff_Config or { PlayerBuffsCount = 8, TargetBuffsCount = 6, TargetDebuffsCount = 12, PlayerBuffs = {}, TargetBuffs = {}, TargetDebuffs = {} }
 local ICON_SIZE = 30
 
 local Addon = CreateFrame("Frame")
