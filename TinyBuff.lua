@@ -145,10 +145,11 @@ local function OnAuraEvent(event, spellId, spellName, destGuid, sourceGuid, icon
 	end
 end
 
-local function ShowSpell(i, destGuid, sourceGuid, icons, config, auraFunc)
-	local spellName, _, img, _, _, duration, expiration, _, _, _, spellId = auraFunc("target", i)
+local function ShowSpell(i, unit, sourceGuid, icons, config, auraFunc)
+	local spellName, _, img, _, _, duration, expiration, _, _, _, spellId = auraFunc(unit, i)
 	if spellName and ContainsSpell(config, spellName, spellId) then
-		EnableIcon(spellId, destGuid, sourceGuid, img, duration, expiration, icons)
+		local guid = UnitGUID(unit)
+		EnableIcon(spellId, guid, sourceGuid, img, duration, expiration, icons)
 	end
 end
 
@@ -157,6 +158,13 @@ local function Reset(icons, guid)
 	  	if not guid or v.DestGuid == guid then
 	  		v:Disable()
 	  	end
+	end
+end
+
+local function SlashCmdHandler()
+	Reset(PlayerBuffs)
+	for i = 1, 40 do
+		ShowSpell(i, "player", PlayerGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
 	end
 end
 
@@ -186,10 +194,9 @@ local function OnEvent(self, event, addon, combatEvent, _, sourceGuid, _, _, _, 
 			return
 		end
 		
-		local guid = UnitGUID("target")
 		for i = 1, 40 do
-			ShowSpell(i, guid, sourceGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
-			ShowSpell(i, guid, sourceGuid, TargetBuffs, TinyBuff_Config.TargetBuffs, UnitBuff)
+			ShowSpell(i, "target", sourceGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
+			ShowSpell(i, "target", sourceGuid, TargetBuffs, TinyBuff_Config.TargetBuffs, UnitBuff)
 		end
 	elseif event == "PLAYER_DEAD" then
 		Reset(PlayerBuffs)
@@ -203,6 +210,9 @@ local function OnEvent(self, event, addon, combatEvent, _, sourceGuid, _, _, _, 
 			Addon:UnregisterEvent("ADDON_LOADED")
 		end
 		CreateIcons()
+
+		SlashCmdList["TBCMD"] = SlashCmdHandler
+    	SLASH_TBCMD1 = "/tbcmd"
 	end
 end
 
