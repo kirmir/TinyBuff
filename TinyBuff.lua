@@ -105,12 +105,12 @@ end
 local function GetUnitType(guid)
 	if guid == PlayerGuid then
 		return "player"
-	end
-	if guid == UnitGUID("target") then
+	elseif guid == UnitGUID("target") then
 		return "target"
-	end
-	if guid == UnitGUID("focus") then
+	elseif guid == UnitGUID("focus") then
 		return "focus"
+	elseif guid == UnitGUID("mouseover") then
+		return "mouseover"
 	end
 end
 
