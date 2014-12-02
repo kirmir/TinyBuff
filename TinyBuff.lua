@@ -27,11 +27,11 @@ local function FindByParams(array, spellId, guid)
 	end)
 end
 
-local function NewIcon(point, size)
+local function NewIcon(point)
 	local icon = CreateFrame("Frame")
 	icon:Hide()
 
-	icon:SetSize(size, size)
+	icon:SetSize(ICON_SIZE, ICON_SIZE)
 	icon:SetPoint(unpack(point))
 
 	icon.Image = icon:CreateTexture("Image", "OVERLAY")
@@ -43,11 +43,25 @@ local function NewIcon(point, size)
 	icon.Cooldown:SetAllPoints(icon.Image)
 	icon.Cooldown:SetReverse()
 
-	function icon:Enable(spellId, destGuid, sourceGuid, icon, duration, expiration)
+	icon.Count = CreateFrame("Frame", nil, icon)
+	icon.Count:SetFrameStrata("HIGH")
+	icon.Count:SetSize(ICON_SIZE, ICON_SIZE)
+	icon.Count:SetPoint("CENTER", icon, "CENTER")
+
+	icon.Count.Text = icon.Count:CreateFontString(nil, "OVERLAY")
+	icon.Count.Text:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 2, 0)
+	icon.Count.Text:SetFont(STANDARD_TEXT_FONT, 10, "OUTLINE")
+	icon.Count.Text:SetTextColor(1, 1, 1)
+
+	function icon:Enable(spellId, destGuid, sourceGuid, icon, duration, expiration, count)
 		self.Image:SetTexture(icon)
 		self.SpellId = spellId
 		self.DestGuid = destGuid
 		self.SourceGuid = sourceGuid
+
+		if count > 0 then
+			self.Count.Text:SetText(count)
+		end
 
 		if duration > 0 then
 			self.Expiration = expiration
@@ -67,6 +81,7 @@ local function NewIcon(point, size)
 	end
 
 	function icon:Disable()
+		self.Count.Text:SetText(nil)
 		self.SpellId = nil
 		self.DestGuid = nil
 		self.SourceGuid = nil
@@ -83,21 +98,21 @@ local function CreateIcons()
 		for i = 1, TinyBuff_Config.PlayerBuffsCount do
 			local x = -140 - ((i - 1) % 2) * (ICON_SIZE + 4)
 			local y = -138 + math.floor((i - 1) / 2) * (ICON_SIZE + 4)
-			PlayerBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
+			PlayerBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y })
 		end
 	end
 	if #TinyBuff_Config.TargetBuffs > 0 then
 		for i = 1, TinyBuff_Config.TargetBuffsCount do
 			local x = ((i % 2 == 1) and 1 or -1) * (17 - math.ceil((math.floor((i - 1) % 6) + 1) / 2) * (ICON_SIZE + 4))
 			local y = 109 + math.floor((i - 1) / 6) * (ICON_SIZE + 4)
-			TargetBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
+			TargetBuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y })
 		end
 	end
 	if #TinyBuff_Config.TargetDebuffs > 0 then
 		for i = 1, TinyBuff_Config.TargetDebuffsCount do
 			local x = ((i % 2 == 1) and 1 or -1) * (17 - math.ceil((math.floor((i - 1) % 6) + 1) / 2) * (ICON_SIZE + 4))
 			local y = -183 + math.floor((i - 1) / 6) * (ICON_SIZE + 4)
-			TargetDebuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y }, ICON_SIZE)
+			TargetDebuffs[i] = NewIcon({ "CENTER", "UIParent", "CENTER", x, y })
 		end
 	end
 end
@@ -114,10 +129,10 @@ local function GetUnitType(guid)
 	end
 end
 
-local function EnableIcon(spellId, destGuid, sourceGuid, img, duration, expiration, icons)
+local function EnableIcon(spellId, destGuid, sourceGuid, img, duration, expiration, count, icons)
 	local icon = FindByParams(icons, spellId, destGuid) or FindByParams(icons, nil, nil)
 	if icon then
-		icon:Enable(spellId, destGuid, sourceGuid, img, duration, expiration)
+		icon:Enable(spellId, destGuid, sourceGuid, img, duration, expiration, count)
 	end
 end
 
@@ -135,9 +150,9 @@ local function OnAuraEvent(event, spellId, spellName, destGuid, sourceGuid, icon
 		local unit = GetUnitType(destGuid)
 		if unit then
 			for i = 1, 40 do
-				local _, _, img, _, _, duration, expiration, _, _, _, id = auraFunc(unit, i)
+				local _, _, img, count, _, duration, expiration, _, _, _, id = auraFunc(unit, i)
 				if id == spellId then
-					EnableIcon(id, destGuid, sourceGuid, img, duration, expiration, icons)
+					EnableIcon(id, destGuid, sourceGuid, img, duration, expiration, count, icons)
 					break
 				end
 			end
@@ -146,10 +161,10 @@ local function OnAuraEvent(event, spellId, spellName, destGuid, sourceGuid, icon
 end
 
 local function ShowSpell(i, unit, sourceGuid, icons, config, auraFunc)
-	local spellName, _, img, _, _, duration, expiration, _, _, _, spellId = auraFunc(unit, i)
+	local spellName, _, img, count, _, duration, expiration, _, _, _, spellId = auraFunc(unit, i)
 	if spellName and ContainsSpell(config, spellName, spellId) then
 		local guid = UnitGUID(unit)
-		EnableIcon(spellId, guid, sourceGuid, img, duration, expiration, icons)
+		EnableIcon(spellId, guid, sourceGuid, img, duration, expiration, count, icons)
 	end
 end
 
@@ -161,14 +176,7 @@ local function Reset(icons, guid)
 	end
 end
 
-local function SlashCmdHandler()
-	Reset(PlayerBuffs)
-	for i = 1, 40 do
-		ShowSpell(i, "player", PlayerGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
-	end
-end
-
-local function OnEvent(self, event, addon, combatEvent, _, sourceGuid, _, _, _, destGuid, _, destFlags, _, spellId, spellName, _, spellType)
+local function OnEvent(self, event, arg1, combatEvent, _, sourceGuid, _, _, _, destGuid, _, destFlags, _, spellId, spellName, _, spellType)
 	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
 		if combatEvent == "UNIT_DIED" then
 			Reset(TargetBuffs, destGuid)
@@ -187,6 +195,13 @@ local function OnEvent(self, event, addon, combatEvent, _, sourceGuid, _, _, _, 
 				OnAuraEvent(combatEvent, spellId, spellName, destGuid, sourceGuid, TargetBuffs, TinyBuff_Config.TargetBuffs, UnitBuff)
 			else
 				OnAuraEvent(combatEvent, spellId, spellName, destGuid, sourceGuid, TargetDebuffs, TinyBuff_Config.TargetDebuffs, UnitDebuff)
+			end
+		end
+	elseif event == "UNIT_AURA" then
+		if arg1 == "player" then
+			Reset(PlayerBuffs)
+			for i = 1, 40 do
+				ShowSpell(i, "player", PlayerGuid, PlayerBuffs, TinyBuff_Config.PlayerBuffs, UnitBuff)
 			end
 		end
 	elseif event == "PLAYER_TARGET_CHANGED" then
@@ -210,15 +225,13 @@ local function OnEvent(self, event, addon, combatEvent, _, sourceGuid, _, _, _, 
 			Addon:UnregisterEvent("ADDON_LOADED")
 		end
 		CreateIcons()
-
-		SlashCmdList["TBCMD"] = SlashCmdHandler
-    	SLASH_TBCMD1 = "/tbcmd"
 	end
 end
 
 Addon:SetScript("OnEvent", OnEvent)
 Addon:RegisterEvent("ADDON_LOADED")
 Addon:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+Addon:RegisterEvent("UNIT_AURA")
 Addon:RegisterEvent("PLAYER_DEAD")
 Addon:RegisterEvent("PLAYER_TARGET_CHANGED")
 Addon:RegisterEvent("PLAYER_ENTERING_WORLD")
