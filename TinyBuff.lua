@@ -44,7 +44,6 @@ local function NewIcon(point)
 	icon.Cooldown:SetReverse()
 
 	icon.Count = CreateFrame("Frame", nil, icon)
-	icon.Count:SetFrameStrata("HIGH")
 	icon.Count:SetSize(ICON_SIZE, ICON_SIZE)
 	icon.Count:SetPoint("CENTER", icon, "CENTER")
 
