@@ -1,0 +1,1 @@
+RegisterStateDriver(PetActionBarFrame, "visibility", "hide")

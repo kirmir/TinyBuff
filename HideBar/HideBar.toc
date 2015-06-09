@@ -1,0 +1,5 @@
+## Interface: 50400
+## Title: HideBar
+## Notes: Hides stance bar
+
+HideBar.lua

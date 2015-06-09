@@ -1,0 +1,5 @@
+## Interface: 60000
+## Title: HidePetBar
+## Notes: Hides pet bar
+
+HidePetBar.lua

@@ -1,0 +1,7 @@
+## Interface: 60000
+## Title: DeRuQuests
+## Version: 1.0
+## Author: kirmir
+## Notes: Translates quests drom Deutsch to Russian
+
+DeRuQuests.lua

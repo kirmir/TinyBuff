@@ -1,0 +1,5 @@
+## Interface: 60000
+## Title: Cooldowns
+## Notes: Adds text to cooldowns
+
+Cooldowns.lua
