@@ -107,11 +107,14 @@ namespace WowheadParser
                     throw new ParserException($"Can't get the quest {id} title for language '{_toLanguage}'.");
 
                 var description = getDescriptionText(html);
-                var progressText = getProgressText(html);
-                var completionText = getCompletionText(html);
+                if (description == null)
+                    throw new ParserException($"Can't get the quest {id} description for language '{_toLanguage}'.");
 
-                if (description == null && completionText == null)
-                    throw new ParserException($"Can't get the quest {id} text for language '{_toLanguage}'.");
+                var progressText = getProgressText(html);
+
+                var completionText = getCompletionText(html);
+                if (completionText == null)
+                    throw new ParserException($"Can't get the quest {id} completion text for language '{_toLanguage}'.");
 
                 quest.Title = title;
                 quest.Description = description;
