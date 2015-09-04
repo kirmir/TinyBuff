@@ -13,8 +13,8 @@ namespace WowheadParser
     internal class Parser
     {
         private const string QUEST_URL_PATTERN = @"http://{0}.wowhead.com/quest={1}";
-        private const int MIN_QUEST_ID = 1790;
-        private const int MAX_QUEST_ID = 1790;
+        private const int MIN_QUEST_ID = 1;
+        private const int MAX_QUEST_ID = 50000;
 
         private readonly string _fromLanguage;
         private readonly string _toLanguage;
