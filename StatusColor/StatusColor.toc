@@ -1,5 +1,3 @@
-## Interface: 60000
+## Interface: 60200
 ## Title: StatusColor
-## Notes: Recolors the default healthbars depends on class
-
 StatusColor.lua
